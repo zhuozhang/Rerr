@@ -17,8 +17,10 @@ vignette: >
 
 __Rerr__ is a package that fits excess relative risk (ERR) models in
 survival analysis, while allowing for measurement error in exposures,
-with or without effect modifications.  ERR models are widely used in
-Radiation epidemiology.  The general form is 
+with or without effect modifications.
+
+ERR models are widely used in Radiation epidemiology.  The general
+form is
 
 $$ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t\right)$$
 $$ \mathrm{background}(t) = \exp\left(a_0 + \sum_j a_j C_j(t)\right) $$
@@ -26,15 +28,15 @@ $$ \mathrm{modifier}_i(t) = \exp\left(\sum_{k_i} a_{k_i} A_{k_i}(t)\right) $$
 
 Currently this package only allow one of the $X_i$'s to be measured
 with error.  This document will walk you through the package from
-installation to analysis of a toy survival data, simulated also by
-functions provided by this package.
+installation to analysis of a simple survival dataset, simulated by a
+function provided by this package.
 
 # Installation
 
-The package can be downloaded from github from
+The package can be downloaded from Github at
 [here](https://github.com/zhuozhang/Rerr).  After unzipping the
-downloaded file, assume the full path to the folder of the package is
-**path_to_foler**.  Then type the following command in R console to
+downloaded file, assuming the full path to the folder of the package
+is **path_to_foler**, type the following command in R console to
 install the package (replace `path_to_folder` with the real path):
 
 ```{r eval=FALSE}
@@ -45,9 +47,9 @@ install.packages(path_to_folder, repos=NULL, type="source")
 
 ## Model specification
 
-The package allows user to specify the ERR model using `formula`
+The package allows user to specify the ERR model using a `formula`
 object in R.  The simulation example provided in this document is
-based on a hypothetical ERR model, formulated as follws (ommiting the
+based on a hypothetical ERR model, formulated as follows (ommiting the
 paramters) $$ h(t) = \exp(1 + log^2(age/40) + sex)(1 + x_1 \exp(sex) +
 x_2) $$ where $x_1, x_2$ are some time-dependent or time-independent
 exposure variables.  The corresponding `formula` specification is
@@ -59,19 +61,20 @@ case ~ I(log(age/60)^2) + sex + ERR( U(x1) | sex) + ERR(x2) + offset(pt)
 As can be seen, 
 
 *  variables associated with baseline risks are specified as in
-   regular linear regression;
-*  the relative risk part associated with $x_1, x_2$ are enclosed by
+   regular linear regressions;
+*  the relative risk part associated with `x1`, `x2` are enclosed by
    `ERR()`;
-*  dose effect modifiers, if any, are separated from exposure by `|`;
-*  exposure variable that is associated with measurement error is
+*  dose effect modifiers, if any, are separated from exposures by `|`;
+*  the exposure variable that is associated with measurement error is
    further enclosed by `U()`;
 
 There are two more variables introduced in the model specification,
-`case` and `offset(pt)`. `offset(pt)` specify that `pt` will
-represents the amount of person-time in each period, and `case`
-represents the outcome indicator variable.  These two variables are
-standard variables used in Poisson table used to analyze survival
-data.  For details, refer to Holford 1980, Laird and Olivier 1981.
+`case` and `offset(pt)`. `offset(pt)` specify that in the returned
+`data.frame`, `pt` represents the amount of person-time in each
+period, and `case` represents the outcome indicator variable.  These
+two variables are standard variables used in Poisson table used to
+analyze survival data.  For details, refer to Holford 1980, Laird and
+Olivier 1981.
 
 ## Data preparation
 
@@ -99,7 +102,7 @@ x2 <- rchisq(n * n.year, 1)            # exposure 2 for py table
 
 To generate a Monte Carlo dosimetry system (MCDS), we use the SUMA
 model proposed by Stram and Kopecky 2003, with only multiplicative
-error.  We assume the variance is 0.2 for shared error and 0.5 for
+errors.  We assume the variance is 0.2 for shared error and 0.5 for
 unshared errors. Here we generated 400 dose replications, as defined
 by `n.rep`.
 
@@ -121,8 +124,7 @@ simulation of the survival data.
 ```{r}
 rep.index <- 1:n.rep
 rep.index <- rep.index[-1]
-x1.mean <- apply(x1.reps[, rep.index], 1, mean)
-data <- data.frame(sex = sex,
+data <- data.frame(sex = sex,  # data frame used for simulation
                    age = age,
                    x1 = x1.reps[, 1],
                    x2 = x2,
@@ -133,7 +135,7 @@ data[1:10, ]
 
 ```
 Shown above is the structure of the `data.frame` object constructed
-for the survival data simulation.  
+for the survival data simulation.
 
 ## Simulation and Inference
 
@@ -163,14 +165,14 @@ data.new[1:10,]
 We can see that there are `r number.case` cases. There is a `index`
 column in the generated `data.frame` object, `data.new`.  This column
 indexes the rows of the original `data` that are kept. The reason of
-having such column is whenever an event occurs, the hypothetical
+having such column is, whenever an event occurs, the hypothetical
 exposure in the 'future' should not exist. This column is necessary
 for aligning the dose replications to the generated `data.frame`.
 
 We fit the model using the average dose in the remaining dose
 replications, and then calculate the confidence intervals of the
 parameters.  We use three functions, __parseERR__, __fitERR__, and
-__inferERR__.  
+__inferERR__.
 
 -  `parseERR` parses the data and the model into a ERR object, which
    contains essential information for fitting and making inference;
@@ -180,6 +182,8 @@ __inferERR__.
    confidence intervals.
 
 ```{r}
+
+x1.mean <- apply(x1.reps[, rep.index], 1, mean) 
 data.new$x1 <- x1.mean[data.new$index]
 data.err <- parseERR(model, data.new)
 xm <- fitERR(data.err)

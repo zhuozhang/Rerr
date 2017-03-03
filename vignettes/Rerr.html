@@ -136,29 +136,31 @@ $(document).ready(function () {
 
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p><strong>Rerr</strong> is a package that fits excess relative risk (ERR) models in survival analysis, while allowing for measurement error in exposures, with or without effect modifications. ERR models are widely used in Radiation epidemiology. The general form is</p>
+<p><strong>Rerr</strong> is a package that fits excess relative risk (ERR) models in survival analysis, while allowing for measurement error in exposures, with or without effect modifications.</p>
+<p>ERR models are widely used in Radiation epidemiology. The general form is</p>
 <p><span class="math display">\[ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t\right)\]</span> <span class="math display">\[ \mathrm{background}(t) = \exp\left(a_0 + \sum_j a_j C_j(t)\right) \]</span> <span class="math display">\[ \mathrm{modifier}_i(t) = \exp\left(\sum_{k_i} a_{k_i} A_{k_i}(t)\right) \]</span></p>
-<p>Currently this package only allow 1 of the <span class="math inline">\(X_i\)</span>’s to be measured with error. This document will walk you through the package from installation to analysis of a toy survival data, simulated also by functions provided by this package.</p>
+<p>Currently this package only allow one of the <span class="math inline">\(X_i\)</span>’s to be measured with error. This document will walk you through the package from installation to analysis of a simple survival dataset, simulated by a function provided by this package.</p>
 </div>
 <div id="installation" class="section level1">
 <h1>Installation</h1>
-<p>The package can be downloaded from github from <a href="https://github.com/zhuozhang/Rerr">here</a>. After unzipping the downloaded file, assume the full path to the folder of the package is <strong>path_to_foler</strong>. Then type the following command in R console to install the pcakge:</p>
+<p>The package can be downloaded from Github at <a href="https://github.com/zhuozhang/Rerr">here</a>. After unzipping the downloaded file, assuming the full path to the folder of the package is <strong>path_to_foler</strong>, type the following command in R console to install the package (replace <code>path_to_folder</code> with the real path):</p>
 <pre class="r"><code>install.packages(path_to_folder, repos=NULL, type=&quot;source&quot;)</code></pre>
 </div>
 <div id="quick-start" class="section level1">
 <h1>Quick Start</h1>
 <div id="model-specification" class="section level2">
 <h2>Model specification</h2>
-<p>The package allow user to specify the ERR model using <code>formula</code> object in R. For a hypothetical ERR model, formulated as (ommiting the paramters) <span class="math display">\[ h(t) = \exp(1 + log^2(age/40) + sex)(1 + x_1 \exp(sex) + x_2) \]</span> where <span class="math inline">\(x_1, x_2\)</span> are some time-dependent or time-independent exposure variables, the corresponding <code>formula</code> specification is</p>
+<p>The package allows user to specify the ERR model using a <code>formula</code> object in R. The simulation example provided in this document is based on a hypothetical ERR model, formulated as follows (ommiting the paramters) <span class="math display">\[ h(t) = \exp(1 + log^2(age/40) + sex)(1 + x_1 \exp(sex) +
+x_2) \]</span> where <span class="math inline">\(x_1, x_2\)</span> are some time-dependent or time-independent exposure variables. The corresponding <code>formula</code> specification is</p>
 <pre class="r"><code>case ~ I(log(age/60)^2) + sex + ERR( U(x1) | sex) + ERR(x2) + offset(pt)</code></pre>
 <p>As can be seen,</p>
 <ul>
-<li>variables associated with baseline risks are specified as in regular linear regression;</li>
-<li>the relative risk part associated with <span class="math inline">\(x_1, x_2\)</span> are enclosed by <code>ERR()</code>;</li>
-<li>dose effect modifiers, if any, are separated from exposure by <code>|</code>;</li>
-<li>exposure variable that is associated with measurement error is further enclosed by <code>U()</code>;</li>
+<li>variables associated with baseline risks are specified as in regular linear regressions;</li>
+<li>the relative risk part associated with <code>x1</code>, <code>x2</code> are enclosed by <code>ERR()</code>;</li>
+<li>dose effect modifiers, if any, are separated from exposures by <code>|</code>;</li>
+<li>the exposure variable that is associated with measurement error is further enclosed by <code>U()</code>;</li>
 </ul>
-<p>There are two more variables introduced in the model specification, <code>case</code> and <code>offset(pt)</code>. <code>offset(pt)</code> specify that <code>pt</code> will represents the amount of person-time in each period, and <code>case</code> represents the outcome indicator variable. These two variables are standard variables used in Poisson table used to analyze survival data. For details, refer to Holford 1980, Laird and Olivier 1981.</p>
+<p>There are two more variables introduced in the model specification, <code>case</code> and <code>offset(pt)</code>. <code>offset(pt)</code> specify that in the returned <code>data.frame</code>, <code>pt</code> represents the amount of person-time in each period, and <code>case</code> represents the outcome indicator variable. These two variables are standard variables used in Poisson table used to analyze survival data. For details, refer to Holford 1980, Laird and Olivier 1981.</p>
 </div>
 <div id="data-preparation" class="section level2">
 <h2>Data preparation</h2>
@@ -178,7 +180,7 @@ time &lt;- rep(1:n.year - 1, n)           # time variable for py table
 censor.time &lt;- rep(n.year, n * n.year) # censor time for py table
 x1 &lt;- rchisq(n * n.year, 1)            # exposure 1 for py table
 x2 &lt;- rchisq(n * n.year, 1)            # exposure 2 for py table</code></pre>
-<p>To generate a Monte Carlo dosimetry system (MCDS), we use the SUMA model proposed by Stram and Kopecky 2003, with only multiplicative error. We assume the variance is 0.2 for shared error and 0.5 for unshared errors.</p>
+<p>To generate a Monte Carlo dosimetry system (MCDS), we use the SUMA model proposed by Stram and Kopecky 2003, with only multiplicative errors. We assume the variance is 0.2 for shared error and 0.5 for unshared errors. Here we generated 400 dose replications, as defined by <code>n.rep</code>.</p>
 <pre class="r"><code>sm.var &lt;- 0.2                # variance of shared multiplicative error
 sm.log.se &lt;- log(1 + sm.var) # standard error on log scale
 sm.log.mu &lt;- - 1/2 * sm.var  # mean on log scale
@@ -188,11 +190,10 @@ um.log.mu &lt;- - 1/2 * um.var  # mean on log scale
 x1.reps &lt;- do.call(cbind, lapply(1:n.rep, function(i) {
     x1 * exp(rnorm(1, sm.log.mu, sm.log.se)) *
         exp(rnorm(n * n.year, um.log.mu, um.log.se))}))</code></pre>
-<p>We use the first dose replication for <code>x1</code> as the true dose for simulating survival data.</p>
+<p>We use the first dose replication for <code>x1</code> as the true dose for simulation of the survival data.</p>
 <pre class="r"><code>rep.index &lt;- 1:n.rep
 rep.index &lt;- rep.index[-1]
-x1.mean &lt;- apply(x1.reps[, rep.index], 1, mean)
-data &lt;- data.frame(sex = sex,
+data &lt;- data.frame(sex = sex,  # data frame used for simulation
                    age = age,
                    x1 = x1.reps[, 1],
                    x2 = x2,
@@ -201,20 +202,21 @@ data &lt;- data.frame(sex = sex,
                    censor.time = censor.time)
 data[1:10, ]</code></pre>
 <pre><code>##    sex age         x1          x2 id time censor.time
-## 1    0  34 0.45194572 0.004401278  1    0          10
-## 2    0  35 0.43371929 0.616322458  1    1          10
-## 3    0  36 0.31526532 0.531325720  1    2          10
-## 4    0  37 0.08804328 1.298094341  1    3          10
-## 5    0  38 0.04721775 0.147642204  1    4          10
-## 6    0  39 0.84975465 1.328016953  1    5          10
-## 7    0  40 1.66759358 0.074153833  1    6          10
-## 8    0  41 0.14675085 0.587873572  1    7          10
-## 9    0  42 1.04485831 0.357483596  1    8          10
-## 10   0  43 0.34400820 0.201369509  1    9          10</code></pre>
+## 1    1  28 0.07093991 3.361416230  1    0          10
+## 2    1  29 0.32978509 0.638320780  1    1          10
+## 3    1  30 0.11437028 5.861438464  1    2          10
+## 4    1  31 0.57756362 4.028363602  1    3          10
+## 5    1  32 1.71814776 0.032918646  1    4          10
+## 6    1  33 0.27496902 2.716068250  1    5          10
+## 7    1  34 0.10498865 0.161487395  1    6          10
+## 8    1  35 5.90185907 0.677147716  1    7          10
+## 9    1  36 0.11974316 0.002876052  1    8          10
+## 10   1  37 0.38371001 0.466237309  1    9          10</code></pre>
+<p>Shown above is the structure of the <code>data.frame</code> object constructed for the survival data simulation.</p>
 </div>
 <div id="simulation-and-inference" class="section level2">
 <h2>Simulation and Inference</h2>
-<p>Shown above is the structure of the <code>data.frame</code> object constructed for the survival data simulation. Then we use <strong>simulateERR</strong> to generate outcome data using the specified ERR model. We specified the parameters for the model, following the order of the variables in the <code>formula</code> object.</p>
+<p>We use function <strong>simulateERR</strong> to generate the outcome data using the specified ERR model. We also specified the parameters for the model, following the order of the variables in the <code>formula</code> object for the model.</p>
 <pre class="r"><code>model &lt;- case ~ I(log(age/40)^2) + sex +
     ERR(U(x1) | sex) + ERR(x2) +
     offset(py)
@@ -226,56 +228,60 @@ data.new &lt;- simulateERR(model, data, theta,
                         censor.time = censor.time)
 number.case &lt;- sum(data.new$case)
 
-data.new[1:10,]</code></pre>
-<pre><code>##    case py sex age         x1          x2 id time censor.time index
-## 1     0  1   0  34 0.45194572 0.004401278  1    0          10     1
-## 2     0  1   0  35 0.43371929 0.616322458  1    1          10     2
-## 3     0  1   0  36 0.31526532 0.531325720  1    2          10     3
-## 4     0  1   0  37 0.08804328 1.298094341  1    3          10     4
-## 5     0  1   0  38 0.04721775 0.147642204  1    4          10     5
-## 6     0  1   0  39 0.84975465 1.328016953  1    5          10     6
-## 7     0  1   0  40 1.66759358 0.074153833  1    6          10     7
-## 8     0  1   0  41 0.14675085 0.587873572  1    7          10     8
-## 9     0  1   0  42 1.04485831 0.357483596  1    8          10     9
-## 10    0  1   0  43 0.34400820 0.201369509  1    9          10    10</code></pre>
-<p>We can see that there are 2015 cases. There is a <code>index</code> column in the generated <code>data.frame</code> object, <code>data.new</code>. This column indexes the rows of the original <code>data</code> that are kept. This is useful for aligning the dose replications.</p>
+number.case</code></pre>
+<pre><code>## [1] 2003</code></pre>
+<pre class="r"><code>data.new[1:10,]</code></pre>
+<pre><code>##    case         py sex age         x1         x2 id time censor.time index
+## 1     0 1.00000000   1  28 0.07093991 3.36141623  1    0          10     1
+## 2     0 1.00000000   1  29 0.32978509 0.63832078  1    1          10     2
+## 3     1 0.09372645   1  30 0.11437028 5.86143846  1    2          10     3
+## 11    0 1.00000000   1  40 0.94112514 0.05918283  2    0          10    11
+## 12    0 1.00000000   1  41 1.24803474 0.13093070  2    1          10    12
+## 13    0 1.00000000   1  42 0.43041288 1.86585430  2    2          10    13
+## 14    0 1.00000000   1  43 1.70408830 0.01950109  2    3          10    14
+## 15    0 1.00000000   1  44 1.70971441 1.31020962  2    4          10    15
+## 16    0 1.00000000   1  45 1.32446374 1.02370171  2    5          10    16
+## 17    0 1.00000000   1  46 0.64011834 0.89316143  2    6          10    17</code></pre>
+<p>We can see that there are 2003 cases. There is a <code>index</code> column in the generated <code>data.frame</code> object, <code>data.new</code>. This column indexes the rows of the original <code>data</code> that are kept. The reason of having such column is, whenever an event occurs, the hypothetical exposure in the ‘future’ should not exist. This column is necessary for aligning the dose replications to the generated <code>data.frame</code>.</p>
 <p>We fit the model using the average dose in the remaining dose replications, and then calculate the confidence intervals of the parameters. We use three functions, <strong>parseERR</strong>, <strong>fitERR</strong>, and <strong>inferERR</strong>.</p>
 <ul>
 <li><code>parseERR</code> parses the data and the model into a ERR object, which contains essential information for fitting and making inference;</li>
 <li><code>fitERR</code> use the parsed ERR object to fit the ERR model to get the MLE;</li>
 <li><code>inferERR</code> takes the parsed ERR object and the MLE to calculate the confidence intervals.</li>
 </ul>
-<pre class="r"><code>data.new$x1 &lt;- x1.mean[data.new$index]
+<pre class="r"><code>x1.mean &lt;- apply(x1.reps[, rep.index], 1, mean) 
+data.new$x1 &lt;- x1.mean[data.new$index]
 data.err &lt;- parseERR(model, data.new)
 xm &lt;- fitERR(data.err)
 xm$conv</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>xm$theta</code></pre>
 <pre><code>##      (Intercept) I(log(age/40)^2)              sex            U(x1) 
-##       -5.0307011        0.7903581        1.0085911        2.2753470 
+##       -4.8253254        0.4793388        0.9486480        1.6915552 
 ##        U(x1)|sex               x2 
-##        0.4480085        0.9588727</code></pre>
+##        0.5556325        0.7656649</code></pre>
 <pre class="r"><code>theta.CI &lt;- inferERR(data.err, xm$theta,
                      x1.reps[data.new$index, rep.index],
                      naive = TRUE)
 theta.CI</code></pre>
 <pre><code>## $CI
-##                        [,1]       [,2]
-## (Intercept)      -5.2625706 -4.7988317
-## I(log(age/40)^2)  0.2955823  1.2851339
-## sex               0.8165641  1.2006181
-## U(x1)             1.3516236  3.6428786
-## U(x1)|sex         0.1155635  0.7804535
-## x2                0.6701708  1.2475747
+##                         [,1]       [,2]
+## (Intercept)      -5.03614217 -4.6145086
+## I(log(age/40)^2) -0.01858543  0.9772631
+## sex               0.76335753  1.1339384
+## U(x1)             0.99597472  2.7626122
+## U(x1)|sex         0.21448140  0.8967836
+## x2                0.54172486  0.9896048
 ## 
 ## $CI.naive
-##                        [,1]       [,2]
-## (Intercept)      -5.2623506 -4.7990516
-## I(log(age/40)^2)  0.2993286  1.2813876
-## sex               0.8167320  1.2004503
-## U(x1)             1.4968610  3.0538331
-## U(x1)|sex         0.1166681  0.7793489
-## x2                0.6704312  1.2473142</code></pre>
+##                         [,1]       [,2]
+## (Intercept)      -5.03599946 -4.6146513
+## I(log(age/40)^2) -0.01619082  0.9748685
+## sex               0.76349938  1.1337966
+## U(x1)             1.12099582  2.2621146
+## U(x1)|sex         0.21548982  0.8957751
+## x2                0.54191234  0.9894174</code></pre>
+<p>This concludes a simple simulation. As we can see here, the naive confidence interval is narrower for <code>x1</code> since it does not account for the variance introduced by shared error component in <code>x1</code>.</p>
 </div>
 </div>
 

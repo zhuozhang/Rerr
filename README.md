@@ -9,17 +9,17 @@ viewed
 
 __Rerr__ is a package that fits excess relative risk (ERR) models in
 survival analysis, while allowing for measurement error in exposures,
-with or without effect modifications.  ERR models are widely used in
+with or without effect modifications.  They are widely used in
 Radiation epidemiology.
 
 Currently this package only allow one of the exposure variables to be
 measured with error.  This document will walk you through the package
-from installation to analysis of a toy survival data, simulated also
-by functions provided by this package.
+from installation to analysis of a simple survival dataset, simulated
+also through the package.
 
 ## Installation
 
-The package can be downloaded from github from
+The package can be downloaded from Github at
 [here](https://github.com/zhuozhang/Rerr).  After unzipping the
 downloaded file, assume the full path to the folder of the package is
 **path_to_foler**.  Then type the following command in R console to
@@ -42,8 +42,11 @@ browseVignettes("Rerr")
 The package allows user to specify the ERR model using `formula`
 object in R.  The simulation example provided in this document is
 based on a hypothetical ERR model, formulated as follws (ommiting the
-paramters) $$ h(t) = \exp(1 + log^2(age/40) + sex)(1 + x_1 \exp(sex) +
-x_2) $$ where $x_1, x_2$ are some time-dependent or time-independent
+paramters) 
+
+	h(t) = exp(1 + log^2(age/40) + sex)(1 + x1 exp(sex) + x2)
+
+where `x1`, `x2` are some time-dependent or time-independent
 exposure variables.  The corresponding `formula` specification is
 
 ```{r eval=FALSE}
@@ -53,11 +56,11 @@ case ~ I(log(age/60)^2) + sex + ERR( U(x1) | sex) + ERR(x2) + offset(pt)
 As can be seen, 
 
 *  variables associated with baseline risks are specified as in
-   regular linear regression;
-*  the relative risk part associated with $x_1, x_2$ are enclosed by
+   regular linear regressions;
+*  the relative risk part associated with `x1`, `x2` are enclosed by
    `ERR()`;
 *  dose effect modifiers, if any, are separated from exposure by `|`;
-*  exposure variable that is associated with measurement error is
+*  the exposure variable that is associated with measurement error is
    further enclosed by `U()`;
 
 There are two more variables introduced in the model specification,
@@ -93,7 +96,7 @@ x2 <- rchisq(n * n.year, 1)            # exposure 2 for py table
 
 To generate a Monte Carlo dosimetry system (MCDS), we use the SUMA
 model proposed by Stram and Kopecky 2003, with only multiplicative
-error.  We assume the variance is 0.2 for shared error and 0.5 for
+errors.  We assume the variance is 0.2 for shared error and 0.5 for
 unshared errors. Here we generated 400 dose replications, as defined
 by `n.rep`.
 
