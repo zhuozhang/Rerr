@@ -41,7 +41,7 @@ browseVignettes("Rerr")
 
 The package allows user to specify the ERR model using `formula`
 object in R.  The simulation example provided in this document is
-based on a hypothetical ERR model, formulated as follws (ommiting the
+based on a hypothetical ERR model, formulated as follows (ommiting the
 paramters) 
 
 	h(t) = exp(1 + log^2(age/40) + sex)(1 + x1 exp(sex) + x2)
