@@ -1,1 +1,9 @@
-exportPattern("^[[:alpha:]]+")
+export(simulateERR,
+       parseERR,
+       fitERR,
+       inferERR)
+export(annualDoseToCumulativeDose,
+       cumulativeDoseToAnnualDose,
+       hsumaAnnualDose,
+       hsumaCumulativeDose)
+

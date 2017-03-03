@@ -2,8 +2,10 @@ Package: Rerr
 Type: Package
 Title: Excessive Relative Risk (ERR) model fitting and inference
 Version: 0.1
-Date: 2016-07-21
+Date: 2017-03-02
 Author: Zhuo Zhang, Daniel Stram
-Maintainer: zhuozhan <zhangzhuo.nju@gmail.com>
+Maintainer: Zhuo Zhang <zhangzhuo.nju@gmail.com>
 Description: Package for fitting Excessive Relative Risk (ERR) model, and making inference about estimates. Confidence intervals for parameter estimates can be corrected for dose uncertainty. 
 License: GPL-3
+Suggests: knitr, rmarkdown
+VignetteBuilder: knitr
