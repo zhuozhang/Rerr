@@ -2,8 +2,8 @@
 
 Due to the limitation of Markdown engine on Github, equations and
 outputs cannot be displayed. A full version of this document can be
-downloaded at
-[here](https://github.com/zhuozhang/Rerr/blob/master/vignettes/Rerr.html).
+viewed
+[here](http://htmlpreview.github.io/?https://github.com/zhuozhang/Rerr/blob/master/vignettes/Rerr.html).
 
 ## Introduction
 
