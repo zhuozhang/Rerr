@@ -22,7 +22,7 @@ with or without effect modifications.
 ERR models are widely used in Radiation epidemiology.  The general
 form is
 
-$$ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t\right)$$
+$$ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t)\right)$$
 $$ \mathrm{background}(t) = \exp\left(a_0 + \sum_j a_j C_j(t)\right) $$
 $$ \mathrm{modifier}_i(t) = \exp\left(\sum_{k_i} a_{k_i} A_{k_i}(t)\right) $$
 

@@ -138,7 +138,7 @@ $(document).ready(function () {
 <h1>Introduction</h1>
 <p><strong>Rerr</strong> is a package that fits excess relative risk (ERR) models in survival analysis, while allowing for measurement error in exposures, with or without effect modifications.</p>
 <p>ERR models are widely used in Radiation epidemiology. The general form is</p>
-<p><span class="math display">\[ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t\right)\]</span> <span class="math display">\[ \mathrm{background}(t) = \exp\left(a_0 + \sum_j a_j C_j(t)\right) \]</span> <span class="math display">\[ \mathrm{modifier}_i(t) = \exp\left(\sum_{k_i} a_{k_i} A_{k_i}(t)\right) \]</span></p>
+<p><span class="math display">\[ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t)\right)\]</span> <span class="math display">\[ \mathrm{background}(t) = \exp\left(a_0 + \sum_j a_j C_j(t)\right) \]</span> <span class="math display">\[ \mathrm{modifier}_i(t) = \exp\left(\sum_{k_i} a_{k_i} A_{k_i}(t)\right) \]</span></p>
 <p>Currently this package only allow one of the <span class="math inline">\(X_i\)</span>’s to be measured with error. This document will walk you through the package from installation to analysis of a simple survival dataset, simulated by a function provided by this package.</p>
 </div>
 <div id="installation" class="section level1">
@@ -201,17 +201,17 @@ data &lt;- data.frame(sex = sex,  # data frame used for simulation
                    time = time,
                    censor.time = censor.time)
 data[1:10, ]</code></pre>
-<pre><code>##    sex age         x1          x2 id time censor.time
-## 1    1  28 0.07093991 3.361416230  1    0          10
-## 2    1  29 0.32978509 0.638320780  1    1          10
-## 3    1  30 0.11437028 5.861438464  1    2          10
-## 4    1  31 0.57756362 4.028363602  1    3          10
-## 5    1  32 1.71814776 0.032918646  1    4          10
-## 6    1  33 0.27496902 2.716068250  1    5          10
-## 7    1  34 0.10498865 0.161487395  1    6          10
-## 8    1  35 5.90185907 0.677147716  1    7          10
-## 9    1  36 0.11974316 0.002876052  1    8          10
-## 10   1  37 0.38371001 0.466237309  1    9          10</code></pre>
+<pre><code>##    sex age          x1          x2 id time censor.time
+## 1    1  26 0.010167429 0.080911234  1    0          10
+## 2    1  27 0.054699950 0.017581505  1    1          10
+## 3    1  28 0.303615295 0.093945229  1    2          10
+## 4    1  29 0.924399549 0.003489061  1    3          10
+## 5    1  30 5.457995266 1.602115072  1    4          10
+## 6    1  31 0.258701267 2.430677046  1    5          10
+## 7    1  32 0.004604008 0.460508831  1    6          10
+## 8    1  33 0.160349051 0.680359166  1    7          10
+## 9    1  34 1.548631902 0.556597256  1    8          10
+## 10   1  35 0.215624590 1.639913611  1    9          10</code></pre>
 <p>Shown above is the structure of the <code>data.frame</code> object constructed for the survival data simulation.</p>
 </div>
 <div id="simulation-and-inference" class="section level2">
@@ -229,20 +229,31 @@ data.new &lt;- simulateERR(model, data, theta,
 number.case &lt;- sum(data.new$case)
 
 number.case</code></pre>
-<pre><code>## [1] 2003</code></pre>
+<pre><code>## [1] 1817</code></pre>
 <pre class="r"><code>data.new[1:10,]</code></pre>
-<pre><code>##    case         py sex age         x1         x2 id time censor.time index
-## 1     0 1.00000000   1  28 0.07093991 3.36141623  1    0          10     1
-## 2     0 1.00000000   1  29 0.32978509 0.63832078  1    1          10     2
-## 3     1 0.09372645   1  30 0.11437028 5.86143846  1    2          10     3
-## 11    0 1.00000000   1  40 0.94112514 0.05918283  2    0          10    11
-## 12    0 1.00000000   1  41 1.24803474 0.13093070  2    1          10    12
-## 13    0 1.00000000   1  42 0.43041288 1.86585430  2    2          10    13
-## 14    0 1.00000000   1  43 1.70408830 0.01950109  2    3          10    14
-## 15    0 1.00000000   1  44 1.70971441 1.31020962  2    4          10    15
-## 16    0 1.00000000   1  45 1.32446374 1.02370171  2    5          10    16
-## 17    0 1.00000000   1  46 0.64011834 0.89316143  2    6          10    17</code></pre>
-<p>We can see that there are 2003 cases. There is a <code>index</code> column in the generated <code>data.frame</code> object, <code>data.new</code>. This column indexes the rows of the original <code>data</code> that are kept. The reason of having such column is, whenever an event occurs, the hypothetical exposure in the ‘future’ should not exist. This column is necessary for aligning the dose replications to the generated <code>data.frame</code>.</p>
+<pre><code>##    case        py sex age          x1          x2 id time censor.time
+## 1     0 1.0000000   1  26 0.010167429 0.080911234  1    0          10
+## 2     0 1.0000000   1  27 0.054699950 0.017581505  1    1          10
+## 3     0 1.0000000   1  28 0.303615295 0.093945229  1    2          10
+## 4     0 1.0000000   1  29 0.924399549 0.003489061  1    3          10
+## 5     0 1.0000000   1  30 5.457995266 1.602115072  1    4          10
+## 6     0 1.0000000   1  31 0.258701267 2.430677046  1    5          10
+## 7     1 0.9373461   1  32 0.004604008 0.460508831  1    6          10
+## 11    0 1.0000000   0  27 1.837905383 0.276333475  2    0          10
+## 12    0 1.0000000   0  28 0.133648099 0.007744271  2    1          10
+## 13    0 1.0000000   0  29 0.019090201 0.742131720  2    2          10
+##    index
+## 1      1
+## 2      2
+## 3      3
+## 4      4
+## 5      5
+## 6      6
+## 7      7
+## 11    11
+## 12    12
+## 13    13</code></pre>
+<p>We can see that there are 1817 cases. There is a <code>index</code> column in the generated <code>data.frame</code> object, <code>data.new</code>. This column indexes the rows of the original <code>data</code> that are kept. The reason of having such column is, whenever an event occurs, the hypothetical exposure in the ‘future’ should not exist. This column is necessary for aligning the dose replications to the generated <code>data.frame</code>.</p>
 <p>We fit the model using the average dose in the remaining dose replications, and then calculate the confidence intervals of the parameters. We use three functions, <strong>parseERR</strong>, <strong>fitERR</strong>, and <strong>inferERR</strong>.</p>
 <ul>
 <li><code>parseERR</code> parses the data and the model into a ERR object, which contains essential information for fitting and making inference;</li>
@@ -257,30 +268,30 @@ xm$conv</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>xm$theta</code></pre>
 <pre><code>##      (Intercept) I(log(age/40)^2)              sex            U(x1) 
-##       -4.8253254        0.4793388        0.9486480        1.6915552 
+##       -4.9605464        0.5656073        1.1088857        1.4878269 
 ##        U(x1)|sex               x2 
-##        0.5556325        0.7656649</code></pre>
+##        0.3145552        0.8729388</code></pre>
 <pre class="r"><code>theta.CI &lt;- inferERR(data.err, xm$theta,
                      x1.reps[data.new$index, rep.index],
                      naive = TRUE)
 theta.CI</code></pre>
 <pre><code>## $CI
 ##                         [,1]       [,2]
-## (Intercept)      -5.03614217 -4.6145086
-## I(log(age/40)^2) -0.01858543  0.9772631
-## sex               0.76335753  1.1339384
-## U(x1)             0.99597472  2.7626122
-## U(x1)|sex         0.21448140  0.8967836
-## x2                0.54172486  0.9896048
+## (Intercept)      -5.17413450 -4.7469584
+## I(log(age/40)^2)  0.03947736  1.0917373
+## sex               0.92767047  1.2901010
+## U(x1)             0.84626349  2.4764165
+## U(x1)|sex        -0.05594512  0.6850556
+## x2                0.63311332  1.1127643
 ## 
 ## $CI.naive
 ##                         [,1]       [,2]
-## (Intercept)      -5.03599946 -4.6146513
-## I(log(age/40)^2) -0.01619082  0.9748685
-## sex               0.76349938  1.1337966
-## U(x1)             1.12099582  2.2621146
-## U(x1)|sex         0.21548982  0.8957751
-## x2                0.54191234  0.9894174</code></pre>
+## (Intercept)      -5.17399098 -4.7471019
+## I(log(age/40)^2)  0.04116384  1.0900508
+## sex               0.92778264  1.2899888
+## U(x1)             0.94573142  2.0299223
+## U(x1)|sex        -0.05487873  0.6839892
+## x2                0.63327090  1.1126067</code></pre>
 <p>This concludes a simple simulation. As we can see here, the naive confidence interval is narrower for <code>x1</code> since it does not account for the variance introduced by shared error component in <code>x1</code>.</p>
 </div>
 </div>
