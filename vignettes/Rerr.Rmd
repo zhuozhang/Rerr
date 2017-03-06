@@ -19,6 +19,14 @@ __Rerr__ is a package that fits excess relative risk (ERR) models in
 survival analysis, while allowing for measurement error in exposures,
 with or without effect modifications.
 
+Measurement errors are assumed to be given by a Monte Carlo dosimetry
+system (MCDS), which consists of multiple dose replications that
+reflect the distribution of the true dose.  In linear dose effect
+models, where ERR models belong, parameter estimates are
+asymptotically unbiased, when the average dose of the MCDS is used for
+model fitting.  `Rerr` corrects the effect of measurement errors by
+adjusting the confidence intervals of parameter estimates.
+
 ERR models are widely used in Radiation epidemiology.  The general
 form is
 
@@ -26,8 +34,13 @@ $$ h(t) = \mathrm{background}(t)\left(1 + \sum_i b_i X_i(t)\mathrm{modifier}_i(t
 $$ \mathrm{background}(t) = \exp\left(a_0 + \sum_j a_j C_j(t)\right) $$
 $$ \mathrm{modifier}_i(t) = \exp\left(\sum_{k_i} a_{k_i} A_{k_i}(t)\right) $$
 
-Currently this package only allow one of the $X_i$'s to be measured
-with error.  This document will walk you through the package from
+where $t$ is time, $h(t)$ is the hazard function, $X_i$ are exposure
+variables, $C_j$ are baseline covariates and $A_{k_i}$ are effect
+modifer variables.  In `Rerr`, we model time dependent variables by
+constructing person-time tables.
+
+Currently `Rerr` only allow one of the $X_i$'s to be measured with
+error.  This document will walk you through the package from
 installation to analysis of a simple survival dataset, simulated by a
 function provided by this package.
 
@@ -36,7 +49,7 @@ function provided by this package.
 The package can be downloaded from Github at
 [here](https://github.com/zhuozhang/Rerr).  After unzipping the
 downloaded file, assuming the full path to the folder of the package
-is **path_to_foler**, type the following command in R console to
+is `path_to_foler`, type the following command in R console to
 install the package (replace `path_to_folder` with the real path):
 
 ```{r eval=FALSE}
@@ -45,14 +58,25 @@ install.packages(path_to_folder, repos=NULL, type="source")
 
 # Quick Start
 
+Here we give an example, by simulating a simple survival study.  The
+underlying hazard function is chosen as a ERR model that depends on
+two exposures, as well as age and sex.  In this study, the MCDS is
+given by a matrix, where each column corresponds to one dose
+replication.  The survival data is generated from one dose replication
+from the MCDS, while we use the remaining dose replications for model
+fitting and confidence interval correction.
+
 ## Model specification
 
-The package allows user to specify the ERR model using a `formula`
-object in R.  The simulation example provided in this document is
-based on a hypothetical ERR model, formulated as follows (ommiting the
-paramters) $$ h(t) = \exp(1 + log^2(age/40) + sex)(1 + x_1 \exp(sex) +
-x_2) $$ where $x_1, x_2$ are some time-dependent or time-independent
-exposure variables.  The corresponding `formula` specification is
+The ERR model is specified using a `formula` object in R.  The
+simulation example provided in this document is based on a
+hypothetical ERR model, formulated as follows (ommiting the paramters)
+
+$$ h(t) = \exp\left(1 + log^2(age/40) + sex\right)\left(1 + x_1 \exp(sex) +
+x_2\right) $$ 
+
+where $x_1, x_2$ are some time-dependent or time-independent exposure
+variables.  The corresponding `formula` for model specification is
 
 ```{r eval=FALSE}
 case ~ I(log(age/60)^2) + sex + ERR( U(x1) | sex) + ERR(x2) + offset(pt)
@@ -61,20 +85,21 @@ case ~ I(log(age/60)^2) + sex + ERR( U(x1) | sex) + ERR(x2) + offset(pt)
 As can be seen, 
 
 *  variables associated with baseline risks are specified as in
-   regular linear regressions;
+   linear regressions;
 *  the relative risk part associated with `x1`, `x2` are enclosed by
    `ERR()`;
-*  dose effect modifiers, if any, are separated from exposures by `|`;
+*  dose effect modifiers, if exist, are separated from exposures by `|`;
 *  the exposure variable that is associated with measurement error is
    further enclosed by `U()`;
 
 There are two more variables introduced in the model specification,
 `case` and `offset(pt)`. `offset(pt)` specify that in the returned
-`data.frame`, `pt` represents the amount of person-time in each
-period, and `case` represents the outcome indicator variable.  These
-two variables are standard variables used in Poisson table used to
-analyze survival data.  For details, refer to Holford 1980, Laird and
-Olivier 1981.
+`data.frame` (from `simulateERR` using this model), `pt` represents
+the amount of effective person-time in each period (due to early
+termination or censoring), and `case` is the outcome indicator
+variable.  These two variables are standard variables used in Poisson
+table used to analyze survival data.  For details, refer to Holford
+1980, Laird and Olivier 1981.
 
 ## Data preparation
 
@@ -102,9 +127,9 @@ x2 <- rchisq(n * n.year, 1)            # exposure 2 for py table
 
 To generate a Monte Carlo dosimetry system (MCDS), we use the SUMA
 model proposed by Stram and Kopecky 2003, with only multiplicative
-errors.  We assume the variance is 0.2 for shared error and 0.5 for
-unshared errors. Here we generated 400 dose replications, as defined
-by `n.rep`.
+errors.  We assume the variance is 0.2 for the shared error and 0.5
+for the unshared error. Here we generated 400 dose replications, as
+defined by `n.rep`.
 
 ```{r}
 sm.var <- 0.2                # variance of shared multiplicative error
@@ -119,11 +144,9 @@ x1.reps <- do.call(cbind, lapply(1:n.rep, function(i) {
 ```
 
 We use the first dose replication for `x1` as the true dose for
-simulation of the survival data.
+the simulation of the survival data.
 
 ```{r}
-rep.index <- 1:n.rep
-rep.index <- rep.index[-1]
 data <- data.frame(sex = sex,  # data frame used for simulation
                    age = age,
                    x1 = x1.reps[, 1],
@@ -139,10 +162,10 @@ for the survival data simulation.
 
 ## Simulation and Inference
 
-We use function __simulateERR__ to generate the outcome data using the
-specified ERR model.  We also specified the parameters for the model,
-following the order of the variables in the `formula` object for the
-model.
+We use the function `simulateERR` to generate the outcome data using
+the specified ERR model.  We also specify the parameters for the
+model, following the order of the variables in the `formula` object
+for the model.
 
 ```{r}
 
@@ -165,24 +188,26 @@ data.new[1:10,]
 We can see that there are `r number.case` cases. There is a `index`
 column in the generated `data.frame` object, `data.new`.  This column
 indexes the rows of the original `data` that are kept. The reason of
-having such column is, whenever an event occurs, the hypothetical
-exposure in the 'future' should not exist. This column is necessary
-for aligning the dose replications to the generated `data.frame`.
+having such column is, whenever an event occurs, the simulated
+exposure in the 'future' should not exist (this column is only useful
+for simulations). This column is necessary for aligning the dose
+replications to the generated `data.frame`.
 
 We fit the model using the average dose in the remaining dose
 replications, and then calculate the confidence intervals of the
-parameters.  We use three functions, __parseERR__, __fitERR__, and
-__inferERR__.
+parameters.  We use three functions, `parseERR`, `fitERR`, and
+`inferERR`.
 
 -  `parseERR` parses the data and the model into a ERR object, which
-   contains essential information for fitting and making inference;
+   contains essential information for model fitting and inference;
 -  `fitERR` use the parsed ERR object to fit the ERR model to get the
    MLE;
 -  `inferERR` takes the parsed ERR object and the MLE to calculate the
-   confidence intervals.
+   confidence intervals of the parameters.
 
 ```{r}
-
+rep.index <- 1:n.rep
+rep.index <- rep.index[-1]
 x1.mean <- apply(x1.reps[, rep.index], 1, mean) 
 data.new$x1 <- x1.mean[data.new$index]
 data.err <- parseERR(model, data.new)
@@ -195,6 +220,7 @@ theta.CI <- inferERR(data.err, xm$theta,
 theta.CI
 ```
 
-This concludes a simple simulation. As we can see here, the naive
-confidence interval is narrower for `x1` since it does not account for
-the variance introduced by shared error component in `x1`.
+This concludes the simple simulation. As we can see here, for `x1` the
+naive confidence interval is narrower compared to the corrected one,
+since it does not account for the variance introduced by shared error
+component in `x1`.
